@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { useCalendar } from "@/calendar/contexts/calendar-context";
-import { useUpdateEvent } from "@/calendar/hooks/use-update-event";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,9 +13,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
 import { SingleDayPicker } from "@/components/ui/single-day-picker";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Form, FormField, FormLabel, FormItem, FormControl, FormMessage } from "@/components/ui/form";
-import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogHeader, DialogClose, DialogContent, DialogTrigger, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormLabel,
+  FormItem,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectItem,
+  SelectContent,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogHeader,
+  DialogClose,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import { eventSchema } from "@/calendar/schemas";
 
@@ -32,9 +53,7 @@ interface IProps {
 export function EditEventDialog({ children, event }: IProps) {
   const { isOpen, onClose, onToggle } = useDisclosure();
 
-  const { users } = useCalendar();
-
-  const { updateEvent } = useUpdateEvent();
+  const { users, events, setEvents } = useCalendar();
 
   const form = useForm<TEventFormData>({
     resolver: zodResolver(eventSchema),
@@ -43,15 +62,21 @@ export function EditEventDialog({ children, event }: IProps) {
       title: event.title,
       description: event.description,
       startDate: parseISO(event.startDate),
-      startTime: { hour: parseISO(event.startDate).getHours(), minute: parseISO(event.startDate).getMinutes() },
+      startTime: {
+        hour: parseISO(event.startDate).getHours(),
+        minute: parseISO(event.startDate).getMinutes(),
+      },
       endDate: parseISO(event.endDate),
-      endTime: { hour: parseISO(event.endDate).getHours(), minute: parseISO(event.endDate).getMinutes() },
+      endTime: {
+        hour: parseISO(event.endDate).getHours(),
+        minute: parseISO(event.endDate).getMinutes(),
+      },
       color: event.color,
     },
   });
 
   const onSubmit = (values: TEventFormData) => {
-    const user = users.find(user => user.id === values.user);
+    const user = users.find((user) => user.id === values.user);
 
     if (!user) throw new Error("User not found");
 
@@ -61,7 +86,7 @@ export function EditEventDialog({ children, event }: IProps) {
     const endDateTime = new Date(values.endDate);
     endDateTime.setHours(values.endTime.hour, values.endTime.minute);
 
-    updateEvent({
+    const updatedEvent: IEvent = {
       ...event,
       user,
       title: values.title,
@@ -69,7 +94,35 @@ export function EditEventDialog({ children, event }: IProps) {
       description: values.description,
       startDate: startDateTime.toISOString(),
       endDate: endDateTime.toISOString(),
-    });
+    };
+
+    // Update event in state
+    const updatedEvents = events.map((evt) =>
+      evt.id === updatedEvent.id ? updatedEvent : evt
+    );
+    setEvents(updatedEvents);
+
+    // Update event in localStorage
+    try {
+      localStorage.setItem("calendar-events", JSON.stringify(updatedEvents));
+    } catch (err) {
+      console.error("Failed to update events in localStorage", err);
+    }
+
+    onClose();
+  };
+
+  const onDelete = () => {
+    // Remove from state
+    const filteredEvents = events.filter((evt) => evt.id !== event.id);
+    setEvents(filteredEvents);
+
+    // Remove from localStorage
+    try {
+      localStorage.setItem("calendar-events", JSON.stringify(filteredEvents));
+    } catch (err) {
+      console.error("Failed to delete event from localStorage", err);
+    }
 
     onClose();
   };
@@ -82,7 +135,8 @@ export function EditEventDialog({ children, event }: IProps) {
         <DialogHeader>
           <DialogTitle>Edit Event</DialogTitle>
           <DialogDescription>
-            This is just and example of how to use the form. In a real application, you would call the API to update the event
+            This is just an example of how to use the form. In a real
+            application, you would call the API to update the event.
           </DialogDescription>
         </DialogHeader>
 
@@ -299,16 +353,22 @@ export function EditEventDialog({ children, event }: IProps) {
           </form>
         </Form>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
-          </DialogClose>
-
-          <Button form="event-form" type="submit">
-            Save changes
+        <DialogFooter className="flex justify-between">
+          <Button variant="destructive" onClick={onDelete}>
+            Delete Event
           </Button>
+
+          <div>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" className="mr-2">
+                Cancel
+              </Button>
+            </DialogClose>
+
+            <Button form="event-form" type="submit">
+              Save changes
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

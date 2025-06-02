@@ -19,9 +19,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Big Calendar by lramos33",
+  title: "Personal Calendar | Vaishal",
   description:
-    "A feature-rich calendar application built with Next.js, TypeScript, and Tailwind CSS. This project provides a modern, responsive interface for managing events and schedules with multiple viewing options.",
+    "A feature-rich calendar application built with Next.js, TypeScript, and Tailwind CSS. This project is for managing my task, studies and schedules with multiple viewing options.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

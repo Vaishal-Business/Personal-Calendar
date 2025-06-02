@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { useDisclosure } from "@/hooks/use-disclosure";
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 
@@ -11,12 +10,39 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { TimeInput } from "@/components/ui/time-input";
 import { SingleDayPicker } from "@/components/ui/single-day-picker";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Form, FormField, FormLabel, FormItem, FormControl, FormMessage } from "@/components/ui/form";
-import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogHeader, DialogClose, DialogContent, DialogTrigger, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import {
+  Form,
+  FormField,
+  FormLabel,
+  FormItem,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectItem,
+  SelectContent,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogHeader,
+  DialogClose,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import { eventSchema } from "@/calendar/schemas";
+import { v4 as uuidv4 } from "uuid";
 
 import type { TimeValue } from "react-aria-components";
 import type { TEventFormData } from "@/calendar/schemas";
@@ -29,7 +55,6 @@ interface IProps {
 
 export function AddEventDialog({ children, startDate, startTime }: IProps) {
   const { users } = useCalendar();
-
   const { isOpen, onClose, onToggle } = useDisclosure();
 
   const form = useForm<TEventFormData>({
@@ -37,15 +62,44 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
     defaultValues: {
       title: "",
       description: "",
-      startDate: typeof startDate !== "undefined" ? startDate : undefined,
-      startTime: typeof startTime !== "undefined" ? startTime : undefined,
+      startDate: startDate ?? undefined,
+      startTime: startTime ?? undefined,
     },
   });
 
-  const onSubmit = (_values: TEventFormData) => {
-    // TO DO: Create use-add-event hook
-    onClose();
+  const onSubmit = (values: TEventFormData) => {
+    const user = users.find(u => u.id === values.user);
+    if (!user) return;
+
+    const startDateTime = new Date(values.startDate!);
+    startDateTime.setHours(values.startTime!.hour);
+    startDateTime.setMinutes(values.startTime!.minute);
+
+    const endDateTime = new Date(values.endDate!);
+    endDateTime.setHours(values.endTime!.hour);
+    endDateTime.setMinutes(values.endTime!.minute);
+
+    const newEvent = {
+      id: uuidv4(),
+      title: values.title,
+      description: values.description,
+      startDate: startDateTime.toISOString(),
+      endDate: endDateTime.toISOString(),
+      color: values.color,
+      user: {
+        id: user.id,
+        name: user.name,
+      },
+    };
+
+    const existingEvents = JSON.parse(localStorage.getItem("calendar-events") || "[]");
+    const updatedEvents = [...existingEvents, newEvent];
+    localStorage.setItem("calendar-events", JSON.stringify(updatedEvents));
+
     form.reset();
+    onClose();
+window.location.reload();
+
   };
 
   return (
@@ -55,9 +109,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Add New Event</DialogTitle>
-          <DialogDescription>
-            This is just and example of how to use the form. In a real application, you would call the API to create the event
-          </DialogDescription>
+          <DialogDescription>Fill in the details below to add an event to your calendar.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -275,13 +327,12 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
           </form>
         </Form>
 
-        <DialogFooter>
+       <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="outline">
               Cancel
             </Button>
           </DialogClose>
-
           <Button form="event-form" type="submit">
             Create Event
           </Button>

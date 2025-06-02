@@ -22,25 +22,48 @@ export function DroppableDayCell({ cell, children }: DroppableDayCellProps) {
     () => ({
       accept: ItemTypes.EVENT,
       drop: (item: { event: IEvent }) => {
-        const droppedEvent = item.event;
+  const droppedEvent = item.event;
 
-        const eventStartDate = parseISO(droppedEvent.startDate);
-        const eventEndDate = parseISO(droppedEvent.endDate);
+  const eventStartDate = parseISO(droppedEvent.startDate);
+  const eventEndDate = parseISO(droppedEvent.endDate);
 
-        const eventDurationMs = differenceInMilliseconds(eventEndDate, eventStartDate);
+  const eventDurationMs = differenceInMilliseconds(eventEndDate, eventStartDate);
 
-        const newStartDate = new Date(cell.date);
-        newStartDate.setHours(eventStartDate.getHours(), eventStartDate.getMinutes(), eventStartDate.getSeconds(), eventStartDate.getMilliseconds());
-        const newEndDate = new Date(newStartDate.getTime() + eventDurationMs);
+  const newStartDate = new Date(cell.date);
+  newStartDate.setHours(
+    eventStartDate.getHours(),
+    eventStartDate.getMinutes(),
+    eventStartDate.getSeconds(),
+    eventStartDate.getMilliseconds()
+  );
+  const newEndDate = new Date(newStartDate.getTime() + eventDurationMs);
 
-        updateEvent({
-          ...droppedEvent,
-          startDate: newStartDate.toISOString(),
-          endDate: newEndDate.toISOString(),
-        });
+  const updatedEvent = {
+    ...droppedEvent,
+    startDate: newStartDate.toISOString(),
+    endDate: newEndDate.toISOString(),
+  };
 
-        return { moved: true };
-      },
+  // 1. Update event in React state/context
+  updateEvent(updatedEvent);
+
+  // 2. Also update localStorage
+  try {
+    const stored = localStorage.getItem("calendar-events");
+    if (stored) {
+      const events = JSON.parse(stored);
+      const updatedEvents = events.map((evt: IEvent) =>
+        evt.id === updatedEvent.id ? updatedEvent : evt
+      );
+      localStorage.setItem("calendar-events", JSON.stringify(updatedEvents));
+    }
+  } catch (error) {
+    console.error("Failed to update events in localStorage", error);
+  }
+
+  return { moved: true };
+},
+
       collect: monitor => ({
         isOver: monitor.isOver(),
         canDrop: monitor.canDrop(),
