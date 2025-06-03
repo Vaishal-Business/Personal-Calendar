@@ -49,7 +49,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         ];
         localStorage.setItem("calendar-events", JSON.stringify(parsedEvents));
       }
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       const formattedEvents = parsedEvents.map((event: any) => ({
         ...event,
         user: users.find((u) => u.id === event.user?.id) || event.user,

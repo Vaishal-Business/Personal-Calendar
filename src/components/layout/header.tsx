@@ -16,7 +16,7 @@ export function Header() {
           <div className="space-y-1">
             <p className="text-lg font-medium leading-6">Calendar</p>
             <p className="text-sm text-foreground">
-              Vaishal's Personnel Calendar{" "}</p>
+              Vaishal&apos;s Personnel Calendar{" "}</p>
           </div>
         </div>
 
