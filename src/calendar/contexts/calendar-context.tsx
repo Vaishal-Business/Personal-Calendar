@@ -19,7 +19,7 @@ interface ICalendarContext {
   visibleHours: TVisibleHours;
   setVisibleHours: Dispatch<SetStateAction<TVisibleHours>>;
   events: IEvent[];
-  setEvents: Dispatch<SetStateAction<IEvent[]>>;
+  setLocalEvents: Dispatch<SetStateAction<IEvent[]>>;
 }
 
 const CalendarContext = createContext({} as ICalendarContext);
@@ -88,7 +88,7 @@ export function CalendarProvider({
         workingHours,
         setWorkingHours,
         events: localEvents,
-        setEvents,
+        setLocalEvents,
       }}
     >
       {children}
